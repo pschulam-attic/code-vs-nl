@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 import json
-import lxml.html
 import argparse
+import heapq
+import logging
+import lxml.html
 from collections import Counter
+import creg
 
 from tokenizer import tokenize
 
 def extract_block(block):
     text = block.text_content()
-    label = ('pre' if block.tag == 'pre' else 
-            ('mixed' if block.find('.//code') else 'nl'))
+    label = ('pre' if block.tag == 'pre' else
+            ('mixed' if block.find('.//code') is not None else 'nl'))
     return text, label
 
 def read_qas(fn):
@@ -22,20 +25,43 @@ def read_qas(fn):
                 yield {'text': text, 'tokenized_text': tokenize(text)}, label
 
 from features.words import unigram
+from features.lexical import gen_lexical_features
 
-FEATURES = [unigram]
+FEATURES = [unigram, gen_lexical_features]
 
 def main():
     parser = argparse.ArgumentParser(description='Train classifier')
     parser.add_argument('data', help='Data path')
     args = parser.parse_args()
 
-    for post, label in read_qas(args.data+'/questions_with_user.json'):
-        features = Counter()
-        for f in FEATURES:
-            for fname, fval in f(post):
-                features[fname] += fval
-        print features, label
+    def dataset(fn):
+        for i, (post, label) in enumerate(read_qas(fn)):
+            if i > 10000: break
+            features = Counter()
+            for f in FEATURES:
+                for fname, fval in f(post):
+                    features[fname] += fval
+            yield features, label
+
+    logging.info('Extracting features for training set')
+    train_data = creg.CategoricalDataset(dataset(args.data+'/train/questions_with_user.json'))
+    model = creg.LogisticRegression(l1=1)
+    logging.info('Training classifier')
+    model.fit(train_data)
+
+    logging.info('Extracting features for test set')
+    test_data = creg.CategoricalDataset(dataset(args.data+'/test/questions_with_user.json'))
+    logging.info('Predicting on test data')
+    predictions = model.predict(test_data)
+
+    label_dist = Counter(v for _, v in test_data)
+    print label_dist
+
+    truth = (y for x, y in test_data)
+    errors = sum(1 if pred != real else 0 for (pred, real) in zip(predictions, truth))
+    print 'Accuracy: %.3f' % (1-errors/float(len(test_data)))
+
+    print heapq.nlargest(10, model.weights['nl'].iteritems(), key=lambda t: abs(t[1]))
 
 if __name__ == '__main__':
     main()

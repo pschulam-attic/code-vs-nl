@@ -1,15 +1,15 @@
 import string
 import re
 
-def gen_lexical_features(clean_post):
-    '''gen_lexical_features(clean_post) -> iteratable over feature-value pairs'''
-    for word in clean_post.split():
+def gen_lexical_features(post):
+    '''gen_lexical_features(post) -> iteratable over feature-value pairs'''
+    for word in post['text'].split():
         yield (str(len(word)), 1) # word lengths
 
         if '_' in word:
             yield 'underscore', 1 # underscore feature
 
-        if any(c in string.digit for c in word) and any(c in string.letters for c in word):
+        if any(c in string.digits for c in word) and any(c in string.letters for c in word):
             yield 'alpha_numeric_mix', 1 # any words with alpha/numeric mix?
 
         if all(c in string.ascii_uppercase for c in word):
