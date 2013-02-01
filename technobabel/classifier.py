@@ -32,9 +32,12 @@ FEATURES = [unigram, gen_lexical_features]
 def main():
     logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Train classifier')
-    parser.add_argument('data', help='Data path')
+    parser.add_argument('train', help='Training dataset')
+    parser.add_argument('dev', help='Development dataset')
+    parser.add_argument('test', help='Evaluation dataset')
     parser.add_argument('--ntrain', help='Number of training posts', type=int, default=1000)
-    parser.add_argument('--ntest', help='Number of training posts', type=int, default=1000)
+    parser.add_argument('--ndev', help='Number of development posts', type=int, default=1000)
+    parser.add_argument('--ntest', help='Number of evaluation posts', type=int, default=1000)
     args = parser.parse_args()
 
     def dataset(fn, n_instances, class_order=None):
@@ -50,13 +53,13 @@ def main():
             yield features, label
 
     logging.info('Extracting features for training set')
-    train_data = creg.CategoricalDataset(dataset(args.data+'/train/questions_with_user.json', args.ntrain, class_order=('mixed', 'pre', 'nl')))
+    train_data = creg.CategoricalDataset(dataset(args.train, args.ntrain, class_order=('mixed', 'pre', 'nl')))
     model = creg.LogisticRegression(l1=1)
     logging.info('Training classifier')
     model.fit(train_data)
 
     logging.info('Extracting features for test set')
-    test_data = creg.CategoricalDataset(dataset(args.data+'/test/questions_with_user.json', args.ntest))
+    test_data = creg.CategoricalDataset(dataset(args.test, args.ntest))
     logging.info('Predicting on test data')
     predictions = model.predict(test_data)
 
