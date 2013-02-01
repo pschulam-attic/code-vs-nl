@@ -1,6 +1,6 @@
 import re
 
-tokenizer = re.compile('\W+', re.UNICODE)
+tokenizer = re.compile('([^\s\w]|\w+)', re.UNICODE)
 
 def tokenize(text):
-    return tokenizer.split(text.lower())
+    return tokenizer.findall(text.lower())

@@ -1,21 +1,21 @@
-import string
 import re
+
+digit_re = re.compile('[0-9]')
+letter_re = re.compile('\w', re.UNICODE)
+upper_re = re.compile('^[A-Z]+$')
 
 def gen_lexical_features(post):
     '''gen_lexical_features(post) -> iteratable over feature-value pairs'''
     for word in post['text'].split():
-        yield (str(len(word)), 1) # word lengths
+        yield 'length='+str(len(word)), 1 # word lengths
 
-        if '_' in word:
-            yield 'underscore', 1 # underscore feature
-
-        if any(c in string.digits for c in word) and any(c in string.letters for c in word):
+        if digit_re.search(word) and letter_re.search(word):
             yield 'alpha_numeric_mix', 1 # any words with alpha/numeric mix?
 
-        if all(c in string.ascii_uppercase for c in word):
+        if upper_re.match(word):
             yield 'all_uppercase', 1 # all uppercase word
 
-        if re.search('[0-9]', word):
+        if digit_re.search(word):
             yield 'hasdigit', 1
             yield 'collapseddigits=' + re.sub('[0-9]', '#', word), 1
             if not re.match('^[0-9]+$', word):
@@ -30,7 +30,6 @@ def gen_lexical_features(post):
             # re module doesn't provide a way to distinguish upper- vs. lowercase Unicode chars
             shape = ''.join(('X' if c.lower()!=c else ('x' if c.isalpha() else c)) for c in shape)
 
-
         # Ciaramita & Altun shape feature
         shape = re.sub(r'[A-Z]{2,}', 'X*', shape)
         shape = re.sub(r'[A-Z]', 'X', shape)
@@ -39,6 +38,3 @@ def gen_lexical_features(post):
         shape = re.sub(r'\d{2,}', 'd*', shape)
         shape = re.sub(r'\d', 'd', shape)
         yield 'shape=' + shape, 1
-
-
-

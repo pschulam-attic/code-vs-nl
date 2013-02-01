@@ -2,7 +2,14 @@
 
 Stackoverflow experiments
 
+## Requirements
+
+- Python 2.7
+- lxml
+- [creg](http://github.com/redpony/creg)
+
 ## Usage
-```
-python -m technobabel.classifier /mal2/corpora/stackexchange/12aug/train/questions.json /mal2/corpora/stackexchange/12aug/dev/questions.json /mal2/corpora/stackexchange/12aug/test/questions.json
+```bash
+export DATA=/mal2/corpora/stackexchange/12aug
+python -m technobabel.classifier $DATA/train/questions.json $DATA/dev/questions.json $DATA/test/questions.json
 ```
