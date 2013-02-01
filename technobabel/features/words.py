@@ -1,3 +1,4 @@
 def unigram(post):
-    for word in post['text'].split():
-        yield word, 1
+    for word in post['tokenized_text']:
+        if not word: continue
+        yield '1g_'+word, 1
