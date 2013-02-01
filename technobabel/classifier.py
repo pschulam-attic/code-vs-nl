@@ -30,13 +30,19 @@ from features.lexical import gen_lexical_features
 FEATURES = [unigram, gen_lexical_features]
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description='Train classifier')
     parser.add_argument('data', help='Data path')
+    parser.add_argument('--ntrain', help='Number of training posts', type=int, default=1000)
+    parser.add_argument('--ntest', help='Number of training posts', type=int, default=1000)
     args = parser.parse_args()
 
-    def dataset(fn):
+    def dataset(fn, n_instances, class_order=None):
+        if class_order:
+            for cl in class_order:
+                yield {}, cl
         for i, (post, label) in enumerate(read_qas(fn)):
-            if i > 10000: break
+            if i > n_instances: break
             features = Counter()
             for f in FEATURES:
                 for fname, fval in f(post):
@@ -44,13 +50,13 @@ def main():
             yield features, label
 
     logging.info('Extracting features for training set')
-    train_data = creg.CategoricalDataset(dataset(args.data+'/train/questions_with_user.json'))
+    train_data = creg.CategoricalDataset(dataset(args.data+'/train/questions_with_user.json', args.ntrain, class_order=('mixed', 'pre', 'nl')))
     model = creg.LogisticRegression(l1=1)
     logging.info('Training classifier')
     model.fit(train_data)
 
     logging.info('Extracting features for test set')
-    test_data = creg.CategoricalDataset(dataset(args.data+'/test/questions_with_user.json'))
+    test_data = creg.CategoricalDataset(dataset(args.data+'/test/questions_with_user.json', args.ntest))
     logging.info('Predicting on test data')
     predictions = model.predict(test_data)
 
@@ -61,7 +67,7 @@ def main():
     errors = sum(1 if pred != real else 0 for (pred, real) in zip(predictions, truth))
     print 'Accuracy: %.3f' % (1-errors/float(len(test_data)))
 
-    print heapq.nlargest(10, model.weights['nl'].iteritems(), key=lambda t: abs(t[1]))
+    print heapq.nlargest(10, model.weights['pre'].iteritems(), key=lambda t: abs(t[1]))
 
 if __name__ == '__main__':
     main()
