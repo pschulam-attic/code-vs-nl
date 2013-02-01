@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 import json
 import lxml.html
+import argparse
 from itertools import chain
-
-TRAIN = '/mal2/corpora/stackexchange/12aug/train'
-
 
 def extract_block(block):
     text = block.text_content()
@@ -26,7 +24,11 @@ from features.words import unigram
 FEATURES = [unigram]
 
 def main():
-    for post, label in read_qas(TRAIN+'/questions_with_user.json'):
+    parser = argparse.ArgumentParser(description='Train classifier')
+    parser.add_argument('data', help='Data path')
+    args = parser.parse_args()
+
+    for post, label in read_qas(args.data+'/questions_with_user.json'):
         features = dict(chain.from_iterable(f(post) for f in FEATURES))
         print features, label
 
