@@ -3,9 +3,10 @@ from classifier import read_qas
 
 def main():
     fn = sys.argv[1]
+    translate = {'mixed' : 'NC', 'pre' : 'C', 'nl' : 'N'}
     sep = ('-'*30) + 'BLOCK' + ('-'*30)
-    for text_dict, _ in read_qas(fn):
-        print sep
+    for text_dict, label in read_qas(fn):
+        print '{}{}'.format(translate[label], sep)
         print
         print text_dict['text']
         print
